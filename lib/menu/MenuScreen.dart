@@ -1,4 +1,5 @@
 import 'package:canteen_app/menu/CartScreen.dart';
+import 'package:canteen_app/menu/user_orders.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -6,19 +7,35 @@ import 'CartItem.dart';
 import 'CartProvider.dart';
 
 class MenuScreen extends StatelessWidget {
-  final CollectionReference menuRef = FirebaseFirestore.instance.collection('menuItems');
+  final CollectionReference menuRef =
+      FirebaseFirestore.instance.collection('menuItems');
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Canteen Menu"), actions: [
-        IconButton(onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CartScreen()),
-          );
-        }, icon: Icon(Icons.shopping_cart))
-      ],),
+      appBar: AppBar(
+        title: Text("Canteen Menu"),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => UserOrders()),
+              );
+            },
+            icon: const Icon(Icons.list),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CartScreen()),
+              );
+            },
+            icon: const Icon(Icons.shopping_cart),
+          )
+        ],
+      ),
       body: StreamBuilder<QuerySnapshot>(
         stream: menuRef.snapshots(),
         builder: (context, snapshot) {
@@ -47,15 +64,22 @@ class MenuScreen extends StatelessWidget {
                 margin: EdgeInsets.all(8.0),
                 child: ListTile(
                   leading: itemImage != null
-                      ? Image.network(itemImage, width: 50, height: 50, fit: BoxFit.cover)
-                      : Icon(Icons.fastfood, size: 50), // Placeholder icon if no image
-                  title: Text(itemName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ? Image.network(itemImage,
+                          width: 50, height: 50, fit: BoxFit.cover)
+                      : Icon(Icons.fastfood,
+                          size: 50), // Placeholder icon if no image
+                  title: Text(itemName,
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(itemDescription),
                       SizedBox(height: 4),
-                      Text("₹$itemPrice", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      Text("₹$itemPrice",
+                          style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   trailing: ElevatedButton(
@@ -66,7 +90,8 @@ class MenuScreen extends StatelessWidget {
                         price: itemPrice,
                       );
 
-                      Provider.of<CartProvider>(context, listen: false).addToCart(cartItem);
+                      Provider.of<CartProvider>(context, listen: false)
+                          .addToCart(cartItem);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text("$itemName added to cart")),
                       );

@@ -1,35 +1,64 @@
 import 'package:canteen_app/menu/MenuScreen.dart';
+import 'package:canteen_app/orders/orders_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart'; // import Register Screen
 
-class LoginScreen extends StatefulWidget {
+class LoginStaffScreen extends StatefulWidget {
+  const LoginStaffScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _LoginStaffScreenState createState() => _LoginStaffScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginStaffScreenState extends State<LoginStaffScreen> {
   final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   Future<void> loginUser() async {
     try {
-      final user = await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MenuScreen()),
-        );
+      final uid = userCredential.user?.uid;
+
+      if (uid != null) {
+        final userDoc = await _firestore.collection('users').doc(uid).get();
+
+        if (userDoc.exists) {
+          final role = userDoc.data()?['role'];
+
+          if (role == 'staff') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const OrdersScreen()),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Access denied. You are not a staff member."),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("User not found."),
+            ),
+          );
+        }
       }
     } catch (e) {
-      print("Login error: $e");
+      debugPrint("Login error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to login. Please try again.")),
+        const SnackBar(
+          content: Text("Failed to login. Please try again."),
+        ),
       );
     }
   }
@@ -37,34 +66,38 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Login")),
+      appBar: AppBar(
+        title: const Text("Login as Staff"),
+      ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: "Email"),
+              decoration: const InputDecoration(labelText: "Email"),
               keyboardType: TextInputType.emailAddress,
             ),
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: "Password"),
+              decoration: const InputDecoration(labelText: "Password"),
               obscureText: true,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: loginUser,
-              child: Text("Login"),
+              child: const Text("Login"),
             ),
             TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => RegisterScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const RegisterScreen(),
+                  ),
                 );
               },
-              child: Text("Go to Register"),
+              child: const Text("Go to Register"),
             ),
           ],
         ),
