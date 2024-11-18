@@ -1,26 +1,55 @@
-import 'package:canteen_app/menu/CartScreen.dart';
-import 'package:canteen_app/menu/user_orders.dart';
+import 'package:canteen_app/models/cart_item.dart';
+import 'package:canteen_app/providers/cart_provider.dart';
+import 'package:canteen_app/screens/menu/cart_screen.dart';
+import 'package:canteen_app/screens/menu/user_orders.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'CartItem.dart';
-import 'CartProvider.dart';
 
-class MenuScreen extends StatelessWidget {
+class MenuScreen extends StatefulWidget {
+  @override
+  State<MenuScreen> createState() => _MenuScreenState();
+}
+
+class _MenuScreenState extends State<MenuScreen> {
   final CollectionReference menuRef =
       FirebaseFirestore.instance.collection('menuItems');
+
+  Map<String, bool> _loadingStates = {};
+
+  Future<void> addItemToCart(BuildContext context, CartItem cartItem) async {
+    setState(() {
+      _loadingStates[cartItem.id] = true;
+    });
+
+    try {
+      await Provider.of<CartProvider>(context, listen: false)
+          .addToCart(cartItem);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${cartItem.name} added to cart")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to add ${cartItem.name} to cart")),
+      );
+    } finally {
+      setState(() {
+        _loadingStates[cartItem.id] = false; // Stop loading for this item
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Canteen Menu"),
+        title: const Text("Canteen Menu"),
         actions: [
           IconButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => UserOrders()),
+                MaterialPageRoute(builder: (context) => const UserOrders()),
               );
             },
             icon: const Icon(Icons.list),
@@ -57,29 +86,42 @@ class MenuScreen extends StatelessWidget {
               var item = menuItems[index];
               var itemName = item['name'];
               var itemDescription = item['description'];
-              var itemPrice = item['price'];
-              var itemImage = item['image']; // Optional image field
+              var itemPrice = (item['price'] as num?)?.toDouble() ?? 0.0;
+              var itemImage = item['image'];
 
               return Card(
-                margin: EdgeInsets.all(8.0),
+                margin: const EdgeInsets.all(8.0),
                 child: ListTile(
                   leading: itemImage != null
-                      ? Image.network(itemImage,
-                          width: 50, height: 50, fit: BoxFit.cover)
-                      : Icon(Icons.fastfood,
-                          size: 50), // Placeholder icon if no image
-                  title: Text(itemName,
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ? Image.network(
+                          itemImage,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        )
+                      : const Icon(
+                          Icons.fastfood,
+                          size: 50,
+                        ), // Placeholder icon if no image
+                  title: Text(
+                    itemName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(itemDescription),
-                      SizedBox(height: 4),
-                      Text("₹$itemPrice",
-                          style: TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                        "₹ $itemPrice",
+                        style: const TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   trailing: ElevatedButton(
@@ -88,6 +130,7 @@ class MenuScreen extends StatelessWidget {
                         id: item.id,
                         name: itemName,
                         price: itemPrice,
+                        quantity: 1,
                       );
 
                       Provider.of<CartProvider>(context, listen: false)
@@ -96,7 +139,7 @@ class MenuScreen extends StatelessWidget {
                         SnackBar(content: Text("$itemName added to cart")),
                       );
                     },
-                    child: Text("Add to Cart"),
+                    child: const Text("Add to Cart"),
                   ),
                 ),
               );

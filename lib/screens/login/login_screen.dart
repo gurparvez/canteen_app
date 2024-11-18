@@ -1,4 +1,4 @@
-import 'package:canteen_app/menu/MenuScreen.dart';
+import 'package:canteen_app/screens/menu/menu_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'register_screen.dart'; // import Register Screen

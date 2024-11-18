@@ -1,5 +1,4 @@
-import 'package:canteen_app/menu/MenuScreen.dart';
-import 'package:canteen_app/orders/orders_screen.dart';
+import 'package:canteen_app/screens/orders/orders_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';

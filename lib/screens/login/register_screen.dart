@@ -1,4 +1,4 @@
-import 'package:canteen_app/menu/MenuScreen.dart';
+import 'package:canteen_app/screens/menu/menu_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -29,6 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (uid != null) {
         await _firestore.collection('users').doc(uid).set({
           'email': _emailController.text.trim(),
+          'name': _emailController.text.trim().split('@')[0],
           'role': 'user',
           'createdAt': FieldValue.serverTimestamp(),
         });

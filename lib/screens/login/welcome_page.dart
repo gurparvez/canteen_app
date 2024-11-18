@@ -1,4 +1,4 @@
-import 'package:canteen_app/login/login_staff_screen.dart';
+import 'package:canteen_app/screens/login/login_staff_screen.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart'; // import your login screen
 import 'register_screen.dart'; // import your register screen
