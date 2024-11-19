@@ -70,7 +70,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         trailing: PopupMenuButton<String>(
                           onSelected: (newStatus) {
                             ordersProvider.updateOrderStatus(
-                                order.id, newStatus);
+                              order.id,
+                              newStatus,
+                            );
                           },
                           itemBuilder: (context) => [
                             const PopupMenuItem(

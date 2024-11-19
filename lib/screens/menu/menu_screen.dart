@@ -2,6 +2,7 @@ import 'package:canteen_app/models/cart_item.dart';
 import 'package:canteen_app/providers/cart_provider.dart';
 import 'package:canteen_app/screens/menu/cart_screen.dart';
 import 'package:canteen_app/screens/menu/user_orders.dart';
+import 'package:canteen_app/screens/profile/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
@@ -45,6 +46,15 @@ class _MenuScreenState extends State<MenuScreen> {
       appBar: AppBar(
         title: const Text("Canteen Menu"),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
+            icon: const Icon(Icons.account_circle_outlined),
+          ),
           IconButton(
             onPressed: () {
               Navigator.push(
