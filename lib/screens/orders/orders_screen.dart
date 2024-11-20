@@ -31,11 +31,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final ordersProvider = Provider.of<OrdersProvider>(context);
-    final orders = ordersProvider.orders;
+    final orders = ordersProvider.todayOrders;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Orders"),
+        title: const Text("Today's Orders"),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.list),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

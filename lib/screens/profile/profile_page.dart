@@ -1,3 +1,4 @@
+import 'package:canteen_app/screens/profile/change_password_form.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,6 +16,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final _nameController = TextEditingController();
 
   String _currentName = "";
+  String _email = "";
   bool _isLoading = false;
 
   @override
@@ -31,12 +33,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final user = _auth.currentUser;
     if (user != null) {
       try {
+        // Fetch user document
         final userDoc =
-        await _firestore.collection('users').doc(user.uid).get();
+            await _firestore.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
           setState(() {
             _currentName = userDoc['name'] ?? "";
             _nameController.text = _currentName;
+            _email = user.email ?? "";
           });
         }
       } catch (e) {
@@ -89,6 +93,27 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _showChangePasswordBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+            top: 16,
+          ),
+          child: const ChangePasswordForm(),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -104,30 +129,70 @@ class _ProfilePageState extends State<ProfilePage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Your Profile",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: "Name",
-                border: OutlineInputBorder(),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Your Profile",
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Name Field
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Name",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Email Field (Read-Only)
+                  TextFormField(
+                    initialValue: _email,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: "Email",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Password Field (Obscured)
+                  const TextField(
+                    obscureText: true,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: "Password",
+                      hintText: "********", // Default 8 asterisks
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Save Changes Button
+                  ElevatedButton(
+                    onPressed: _updateUserName,
+                    child: const Text("Save Name"),
+                  ),
+
+                  // Change Password Button
+                  ElevatedButton(
+                    onPressed: () {
+                      _showChangePasswordBottomSheet(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.errorContainer,
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                    child: const Text("Change Password"),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _updateUserName,
-              child: const Text("Save Changes"),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

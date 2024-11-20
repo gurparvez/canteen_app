@@ -5,8 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class OrdersProvider with ChangeNotifier {
   final _firestore = FirebaseFirestore.instance;
   List<OrderItem> _orders = [];
+  List<OrderItem> _todayOrders = [];
 
   List<OrderItem> get orders => _orders;
+  List<OrderItem> get todayOrders => _todayOrders;
 
   Future<void> fetchOrders() async {
     final snapshot = await _firestore
@@ -14,9 +16,41 @@ class OrdersProvider with ChangeNotifier {
         .orderBy('timestamp', descending: true)
         .get();
 
-    _orders = snapshot.docs
+    final now = DateTime.now();
+    bool isToday(DateTime time) =>
+        time.year == now.year && time.month == now.month && time.day == now.day;
+
+    // Map Firestore documents to OrderItem objects
+    List<OrderItem> fetchedOrders = snapshot.docs
         .map((doc) => OrderItem.fromMap(doc.id, doc.data()))
         .toList();
+
+    _orders = fetchedOrders;
+
+    // Filter only today's orders
+    List<OrderItem> todayOrders =
+        fetchedOrders.where((order) => isToday(order.timestamp)).toList();
+
+    // Sort the orders
+    todayOrders.sort((a, b) {
+      // Prioritize pending orders
+      if (a.status == 'Pending' && b.status != 'Pending') return -1;
+      if (a.status != 'Pending' && b.status == 'Pending') return 1;
+
+      // For pending orders, sort by ascending timestamp
+      if (a.status == 'Pending' && b.status == 'Pending') {
+        return a.timestamp.compareTo(b.timestamp);
+      }
+
+      // For today's completed orders, sort by ascending timestamp
+      if (a.status == 'Completed' && b.status == 'Completed') {
+        return a.timestamp.compareTo(b.timestamp);
+      }
+
+      return 0;
+    });
+
+    _todayOrders = todayOrders;
     notifyListeners();
   }
 
