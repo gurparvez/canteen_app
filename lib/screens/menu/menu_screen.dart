@@ -35,7 +35,7 @@ class _MenuScreenState extends State<MenuScreen> {
       );
     } finally {
       setState(() {
-        _loadingStates[cartItem.id] = false; // Stop loading for this item
+        _loadingStates[cartItem.id] = false;
       });
     }
   }
@@ -112,7 +112,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       : const Icon(
                           Icons.fastfood,
                           size: 50,
-                        ), // Placeholder icon if no image
+                        ),
                   title: Text(
                     itemName,
                     style: const TextStyle(

@@ -1,3 +1,4 @@
+import 'package:canteen_app/providers/items_provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
 import 'package:canteen_app/providers/user_orders_provider.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => UserOrdersProvider()),
+        ChangeNotifierProvider(create: (_) => ItemsProvider()),
       ],
       child: MyApp(),
     ),

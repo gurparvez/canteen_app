@@ -37,11 +37,25 @@ class CartProvider with ChangeNotifier {
     final user = _auth.currentUser;
     if (user == null) return;
 
+    final menuItemDocRef = _firestore.collection('menuItems').doc(item.id);
     final cartDocRef = _firestore
         .collection('users')
         .doc(user.uid)
         .collection('cart')
         .doc(item.id);
+
+    // Fetch the menu item to check stock
+    final menuItemDoc = await menuItemDocRef.get();
+    if (!menuItemDoc.exists) {
+      throw Exception('Menu item not found');
+    }
+
+    final menuItemData = menuItemDoc.data();
+    final currentStock = menuItemData?['stock'] ?? 0;
+
+    if (currentStock < item.quantity) {
+      throw Exception('Not enough stock available');
+    }
 
     // Check if the item already exists in the cart
     final existingDoc = await cartDocRef.get();
@@ -56,6 +70,10 @@ class CartProvider with ChangeNotifier {
       final currentQuantity = existingDoc.data()?['quantity'] ?? 0;
       final newQuantity = currentQuantity + item.quantity;
 
+      if (currentStock < newQuantity) {
+        throw Exception('Not enough stock available for the updated quantity');
+      }
+
       await cartDocRef.update({'quantity': newQuantity});
 
       // Update local cart list
@@ -69,6 +87,10 @@ class CartProvider with ChangeNotifier {
         );
       }
     }
+
+    // Reduce the stock in the menuItems collection
+    final updatedStock = currentStock - item.quantity;
+    await menuItemDocRef.update({'stock': updatedStock});
 
     notifyListeners();
   }

@@ -1,4 +1,5 @@
 import 'package:canteen_app/screens/orders/all_orders.dart';
+import 'package:canteen_app/screens/orders/stocks_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
@@ -45,6 +46,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
       appBar: AppBar(
         title: const Text("Today's Orders"),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => StocksScreen()),
+              );
+            },
+            icon: const Icon(Icons.inventory_2_outlined),
+          ),
           IconButton(
             onPressed: () {
               Navigator.push(
