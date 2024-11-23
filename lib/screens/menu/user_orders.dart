@@ -60,7 +60,11 @@ class _UserOrdersState extends State<UserOrders> {
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                color: status == "Completed" ? Colors.green.shade100 : null,
+                color: status == "Completed"
+                    ? Colors.green.shade100
+                    : status == "Cancelled"
+                        ? Colors.red.shade100
+                        : null,
                 child: ListTile(
                   title: Text(
                     "Order Total: ₹$totalPrice",
@@ -81,7 +85,10 @@ class _UserOrdersState extends State<UserOrders> {
                   ),
                   trailing: status == "Completed"
                       ? const Icon(Icons.check_circle, color: Colors.green)
-                      : const Icon(Icons.hourglass_empty, color: Colors.orange),
+                      : status == "Cancelled"
+                          ? const Icon(Icons.cancel, color: Colors.red)
+                          : const Icon(Icons.hourglass_empty,
+                              color: Colors.orange),
                 ),
               );
             },

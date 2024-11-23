@@ -59,7 +59,11 @@ class OrdersProvider with ChangeNotifier {
         .collection('orders')
         .doc(orderId)
         .update({'status': newStatus});
+
     final orderIndex = _orders.indexWhere((order) => order.id == orderId);
+    final todayOrderIndex =
+        _todayOrders.indexWhere((order) => order.id == orderId);
+
     if (orderIndex != -1) {
       _orders[orderIndex] = OrderItem(
         id: _orders[orderIndex].id,
@@ -69,7 +73,19 @@ class OrdersProvider with ChangeNotifier {
         status: newStatus,
         timestamp: _orders[orderIndex].timestamp,
       );
-      notifyListeners();
     }
+
+    if (todayOrderIndex != -1) {
+      _todayOrders[orderIndex] = OrderItem(
+        id: _todayOrders[orderIndex].id,
+        userName: _todayOrders[orderIndex].userName,
+        orderItems: _todayOrders[orderIndex].orderItems,
+        totalPrice: _todayOrders[orderIndex].totalPrice,
+        status: newStatus,
+        timestamp: _todayOrders[orderIndex].timestamp,
+      );
+    }
+
+    notifyListeners();
   }
 }

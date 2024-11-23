@@ -1,3 +1,4 @@
+import 'package:canteen_app/screens/orders/all_orders.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
@@ -19,13 +20,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Future<void> _fetchOrders() async {
-    setState(() {
-      _isLoading = true;
-    });
-    await Provider.of<OrdersProvider>(context, listen: false).fetchOrders();
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      await Provider.of<OrdersProvider>(context, listen: false).fetchOrders();
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Login error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to login. Please try again.")),
+      );
+    }
   }
 
   @override
@@ -38,7 +46,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
         title: const Text("Today's Orders"),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AllOrders()),
+              );
+            },
             icon: const Icon(Icons.list),
           ),
         ],
@@ -51,45 +64,76 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   itemCount: orders.length,
                   itemBuilder: (context, index) {
                     final order = orders[index];
-                    return Card(
-                      margin: const EdgeInsets.all(8.0),
-                      child: ListTile(
-                        title: Text("Order by ${order.userName}"),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...order.orderItems.map((item) {
-                              return Text(
-                                "${item['name']} x ${item['quantity']} - ₹${item['price'] * item['quantity']}",
-                              );
-                            }).toList(),
-                            const SizedBox(height: 8.0),
-                            Text(
-                              "Total: ₹${order.totalPrice}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                    final isCompleted = order.status == 'Completed';
+                    final isCancelled = order.status == 'Cancelled';
+
+                    return Opacity(
+                      opacity:
+                          isCompleted || isCancelled ? 0.5 : 1.0, // Fade effect
+                      child: Card(
+                        margin: const EdgeInsets.all(8.0),
+                        child: ListTile(
+                          title: Text(
+                            "Order by ${order.userName}",
+                            style: TextStyle(
+                              color: isCompleted || isCancelled
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...order.orderItems.map((item) {
+                                return Text(
+                                  "${item['name']} x ${item['quantity']} - ₹${item['price'] * item['quantity']}",
+                                  style: TextStyle(
+                                    color: isCompleted || isCancelled
+                                        ? Colors.grey
+                                        : Colors.black,
+                                  ),
+                                );
+                              }).toList(),
+                              const SizedBox(height: 8.0),
+                              Text(
+                                "Total: ₹${order.totalPrice}",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isCompleted || isCancelled
+                                      ? Colors.grey
+                                      : Colors.black,
+                                ),
                               ),
-                            ),
-                            Text("Status: ${order.status}"),
-                          ],
-                        ),
-                        trailing: PopupMenuButton<String>(
-                          onSelected: (newStatus) {
-                            ordersProvider.updateOrderStatus(
-                              order.id,
-                              newStatus,
-                            );
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'Completed',
-                              child: Text("Mark as Completed"),
-                            ),
-                            const PopupMenuItem(
-                              value: 'Cancelled',
-                              child: Text("Mark as Cancelled"),
-                            ),
-                          ],
+                              Text(
+                                "Status: ${order.status}",
+                                style: TextStyle(
+                                  color: isCompleted
+                                      ? Colors.green
+                                      : isCancelled
+                                          ? Colors.red
+                                          : Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (newStatus) {
+                              ordersProvider.updateOrderStatus(
+                                order.id,
+                                newStatus,
+                              );
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'Completed',
+                                child: Text("Mark as Completed"),
+                              ),
+                              const PopupMenuItem(
+                                value: 'Cancelled',
+                                child: Text("Mark as Cancelled"),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
