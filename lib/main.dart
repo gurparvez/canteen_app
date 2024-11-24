@@ -1,3 +1,4 @@
+import 'package:canteen_app/firebase_options.dart';
 import 'package:canteen_app/providers/items_provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
 import 'package:canteen_app/providers/user_orders_provider.dart';
@@ -11,7 +12,12 @@ import 'providers/cart_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // await FirebaseNotifications().initNotifications();
+
   runApp(
     MultiProvider(
       providers: [
