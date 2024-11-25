@@ -2,6 +2,7 @@ import 'package:canteen_app/firebase_options.dart';
 import 'package:canteen_app/providers/items_provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
 import 'package:canteen_app/providers/user_orders_provider.dart';
+import 'package:canteen_app/providers/users_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:canteen_app/screens/login/welcome_page.dart';
@@ -25,6 +26,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => OrdersProvider()),
         ChangeNotifierProvider(create: (_) => UserOrdersProvider()),
         ChangeNotifierProvider(create: (_) => ItemsProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MyApp(),
     ),

@@ -1,5 +1,6 @@
 import 'package:canteen_app/screens/orders/all_orders.dart';
 import 'package:canteen_app/screens/orders/stocks_screen.dart';
+import 'package:canteen_app/screens/users/user_management.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
@@ -63,6 +64,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
               );
             },
             icon: const Icon(Icons.list),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UserManagementScreen()),
+              );
+            },
+            icon: const Icon(Icons.supervisor_account_outlined),
           ),
         ],
       ),
