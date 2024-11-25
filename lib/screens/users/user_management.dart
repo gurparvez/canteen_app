@@ -22,10 +22,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('User Management'),
+        title: const Text('User Management'),
       ),
       body: userProvider.users.isEmpty
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
         itemCount: userProvider.users.length,
         itemBuilder: (context, index) {
@@ -43,11 +43,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: Icon(Icons.edit),
+                  icon: const Icon(Icons.edit),
                   onPressed: () => _showEditDialog(context, user, userProvider),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete),
+                  icon: const Icon(Icons.delete),
                   onPressed: () => _removeUser(context, user['id'], userProvider),
                 ),
               ],
@@ -62,19 +62,19 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete User'),
-        content: Text('Are you sure you want to delete this user?'),
+        title: const Text('Delete User'),
+        content: const Text('Are you sure you want to delete this user?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
               await userProvider.removeUser(userId);
               Navigator.of(ctx).pop();
             },
-            child: Text('Delete'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -89,18 +89,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Edit User'),
+        title: const Text('Edit User'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: InputDecoration(labelText: 'Name'),
+                decoration: const InputDecoration(labelText: 'Name'),
               ),
               TextField(
                 controller: emailController,
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: const InputDecoration(labelText: 'Email'),
               ),
               DropdownButtonFormField<String>(
                 value: selectedRole,
@@ -115,7 +115,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     selectedRole = value!;
                   });
                 },
-                decoration: InputDecoration(labelText: 'Role'),
+                decoration: const InputDecoration(labelText: 'Role'),
               ),
             ],
           ),
@@ -123,7 +123,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () async {
@@ -135,7 +135,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               await userProvider.updateUser(user['id'], updatedData);
               Navigator.of(ctx).pop();
             },
-            child: Text('Save'),
+            child: const Text('Save'),
           ),
         ],
       ),
