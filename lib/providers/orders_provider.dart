@@ -28,29 +28,9 @@ class OrdersProvider with ChangeNotifier {
     _orders = fetchedOrders;
 
     // Filter only today's orders
-    List<OrderItem> todayOrders =
+    _todayOrders =
         fetchedOrders.where((order) => isToday(order.timestamp)).toList();
 
-    // Sort the orders
-    todayOrders.sort((a, b) {
-      // Prioritize pending orders
-      if (a.status == 'Pending' && b.status != 'Pending') return -1;
-      if (a.status != 'Pending' && b.status == 'Pending') return 1;
-
-      // For pending orders, sort by ascending timestamp
-      if (a.status == 'Pending' && b.status == 'Pending') {
-        return a.timestamp.compareTo(b.timestamp);
-      }
-
-      // For today's completed orders, sort by ascending timestamp
-      if (a.status == 'Completed' && b.status == 'Completed') {
-        return a.timestamp.compareTo(b.timestamp);
-      }
-
-      return 0;
-    });
-
-    _todayOrders = todayOrders;
     notifyListeners();
   }
 

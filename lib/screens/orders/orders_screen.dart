@@ -138,12 +138,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           ),
                           trailing: PopupMenuButton<String>(
                             onSelected: (newStatus) {
+                              debugPrint("Updating order: ${order.id} to status: $newStatus");
                               ordersProvider.updateOrderStatus(
                                 order.id,
                                 newStatus,
                               );
                             },
                             itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'Pending',
+                                child: Text("Mark as Pending"),
+                              ),
                               const PopupMenuItem(
                                 value: 'Completed',
                                 child: Text("Mark as Completed"),
