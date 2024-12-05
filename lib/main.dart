@@ -1,23 +1,31 @@
-import 'package:canteen_app/firebase_options.dart';
+import 'package:canteen_app/screens/login/login_staff_screen.dart';
+import 'package:canteen_app/screens/menu/menu_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'package:canteen_app/firebase_options.dart';
 import 'package:canteen_app/providers/items_provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
 import 'package:canteen_app/providers/user_orders_provider.dart';
 import 'package:canteen_app/providers/users_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:canteen_app/screens/login/welcome_page.dart';
 import 'package:provider/provider.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/login/register_screen.dart';
 import 'providers/cart_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+// TODO: migrate the entire app to supabase.
+// push notifications require to upgrade the firebase project
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await dotenv.load(fileName: ".env");
 
-  // await FirebaseNotifications().initNotifications();
+  await Supabase.initialize(
+    url: dotenv.env["SUPABASE_URL"] ?? "",
+    anonKey: dotenv.env["SUPABASE_ANON_KEY"] ?? "",
+  );
 
   runApp(
     MultiProvider(
@@ -42,10 +50,13 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const WelcomeScreen(),
+      initialRoute: '/',
       routes: {
+        '/': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),
+        '/login-staff': (context) => const LoginStaffScreen(),
         '/register': (context) => const RegisterScreen(),
+        "/menu": (context) => MenuScreen(),
       },
     );
   }
