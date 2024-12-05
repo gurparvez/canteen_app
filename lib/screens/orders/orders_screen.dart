@@ -79,6 +79,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
     }
   }
 
+  Future<void> _handleLogout() async {
+    await supabase.auth.signOut();
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/',
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ordersProvider = Provider.of<OrdersProvider>(context);
@@ -114,6 +124,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
               );
             },
             icon: const Icon(Icons.supervisor_account_outlined),
+          ),
+          IconButton(
+            onPressed: _handleLogout,
+            icon: const Icon(Icons.logout),
           ),
         ],
       ),
