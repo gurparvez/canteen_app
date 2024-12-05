@@ -38,17 +38,17 @@ class _UserOrdersState extends State<UserOrders> {
             );
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.receipt_long_outlined,
                     size: 64,
                     color: Colors.grey,
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
+                  SizedBox(height: 16),
+                  Text(
                     "You haven't placed any orders yet.",
                     style: TextStyle(
                       fontSize: 18,
