@@ -4,6 +4,7 @@ import 'package:canteen_app/providers/orders_provider.dart';
 import 'package:canteen_app/screens/orders/all_orders.dart';
 import 'package:canteen_app/screens/orders/stocks_screen.dart';
 import 'package:canteen_app/screens/users/user_management.dart';
+import 'package:canteen_app/utils/supabase_client.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -18,7 +19,47 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
+    _checkAuth();
     _fetchOrders();
+  }
+
+  Future<void> _checkAuth() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        );
+        return;
+      }
+    }
+
+    // Check if user is staff
+    try {
+      final userData = await supabase
+          .from('users')
+          .select()
+          .eq('id', user!.id)
+          .single();
+
+      if (userData['role'] != 'staff') {
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/',
+            (route) => false,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking user role: $e');
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        );
+      }
+    }
   }
 
   Future<void> _fetchOrders() async {

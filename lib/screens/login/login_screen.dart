@@ -1,4 +1,3 @@
-import 'package:canteen_app/screens/menu/menu_screen.dart';
 import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
 import 'register_screen.dart';

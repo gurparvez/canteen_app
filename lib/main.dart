@@ -1,5 +1,6 @@
 import 'package:canteen_app/screens/login/login_staff_screen.dart';
 import 'package:canteen_app/screens/menu/menu_screen.dart';
+import 'package:canteen_app/screens/orders/orders_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import 'package:canteen_app/firebase_options.dart';
 import 'package:canteen_app/providers/items_provider.dart';
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
         '/login-staff': (context) => const LoginStaffScreen(),
         '/register': (context) => const RegisterScreen(),
         "/menu": (context) => MenuScreen(),
+        "/orders": (context) => const OrdersScreen(),
       },
     );
   }

@@ -1,4 +1,3 @@
-import 'package:canteen_app/screens/orders/orders_screen.dart';
 import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
@@ -35,9 +34,9 @@ class _LoginStaffScreenState extends State<LoginStaffScreen> {
 
         if (userData['role'] == 'staff') {
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const OrdersScreen()),
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              "/orders",
+              (route) => false,
             );
           }
         } else {
@@ -153,7 +152,8 @@ class _LoginStaffScreenState extends State<LoginStaffScreen> {
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
                                     ),
                                   )
                                 : const Text(
@@ -164,14 +164,17 @@ class _LoginStaffScreenState extends State<LoginStaffScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextButton(
-                          onPressed: _isLoading ? null : () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RegisterScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const RegisterScreen(),
+                                    ),
+                                  );
+                                },
                           child: const Text(
                             "Go to Register",
                             style: TextStyle(fontSize: 14),

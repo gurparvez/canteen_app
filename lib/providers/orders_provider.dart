@@ -1,9 +1,8 @@
 import 'package:canteen_app/models/order_item.dart';
+import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class OrdersProvider with ChangeNotifier {
-  final _firestore = FirebaseFirestore.instance;
   List<OrderItem> _orders = [];
   List<OrderItem> _todayOrders = [];
 
@@ -11,61 +10,73 @@ class OrdersProvider with ChangeNotifier {
   List<OrderItem> get todayOrders => _todayOrders;
 
   Future<void> fetchOrders() async {
-    final snapshot = await _firestore
-        .collection('orders')
-        .orderBy('timestamp', descending: true)
-        .get();
+    try {
+      final snapshot = await supabase
+          .from('orders')
+          .select()
+          .order('created_at', ascending: false);
 
-    final now = DateTime.now();
-    bool isToday(DateTime time) =>
-        time.year == now.year && time.month == now.month && time.day == now.day;
+      final now = DateTime.now();
+      bool isToday(DateTime time) =>
+          time.year == now.year && time.month == now.month && time.day == now.day;
 
-    // Map Firestore documents to OrderItem objects
-    List<OrderItem> fetchedOrders = snapshot.docs
-        .map((doc) => OrderItem.fromMap(doc.id, doc.data()))
-        .toList();
+      List<OrderItem> fetchedOrders = snapshot.map<OrderItem>((data) {
+        return OrderItem(
+          id: data['id'],
+          userName: data['user_name'],
+          orderItems: (data['order_items'] as List).cast<Map<String, dynamic>>(),
+          totalPrice: (data['total_price'] as num).toDouble(),
+          status: data['status'],
+          timestamp: DateTime.parse(data['created_at']),
+        );
+      }).toList();
 
-    _orders = fetchedOrders;
+      _orders = fetchedOrders;
+      _todayOrders = fetchedOrders.where((order) => isToday(order.timestamp)).toList();
 
-    // Filter only today's orders
-    _todayOrders =
-        fetchedOrders.where((order) => isToday(order.timestamp)).toList();
-
-    notifyListeners();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching orders: $e');
+      rethrow;
+    }
   }
 
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
-    await _firestore
-        .collection('orders')
-        .doc(orderId)
-        .update({'status': newStatus});
+    try {
+      await supabase
+          .from('orders')
+          .update({'status': newStatus.toLowerCase()})
+          .eq('id', orderId);
 
-    final orderIndex = _orders.indexWhere((order) => order.id == orderId);
-    final todayOrderIndex =
-        _todayOrders.indexWhere((order) => order.id == orderId);
+      final orderIndex = _orders.indexWhere((order) => order.id == orderId);
+      final todayOrderIndex = _todayOrders.indexWhere((order) => order.id == orderId);
 
-    if (orderIndex != -1) {
-      _orders[orderIndex] = OrderItem(
-        id: _orders[orderIndex].id,
-        userName: _orders[orderIndex].userName,
-        orderItems: _orders[orderIndex].orderItems,
-        totalPrice: _orders[orderIndex].totalPrice,
-        status: newStatus,
-        timestamp: _orders[orderIndex].timestamp,
-      );
+      if (orderIndex != -1) {
+        _orders[orderIndex] = OrderItem(
+          id: _orders[orderIndex].id,
+          userName: _orders[orderIndex].userName,
+          orderItems: _orders[orderIndex].orderItems,
+          totalPrice: _orders[orderIndex].totalPrice,
+          status: newStatus.toLowerCase(),
+          timestamp: _orders[orderIndex].timestamp,
+        );
+      }
+
+      if (todayOrderIndex != -1) {
+        _todayOrders[todayOrderIndex] = OrderItem(
+          id: _todayOrders[todayOrderIndex].id,
+          userName: _todayOrders[todayOrderIndex].userName,
+          orderItems: _todayOrders[todayOrderIndex].orderItems,
+          totalPrice: _todayOrders[todayOrderIndex].totalPrice,
+          status: newStatus.toLowerCase(),
+          timestamp: _todayOrders[todayOrderIndex].timestamp,
+        );
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating order status: $e');
+      rethrow;
     }
-
-    if (todayOrderIndex != -1) {
-      _todayOrders[orderIndex] = OrderItem(
-        id: _todayOrders[orderIndex].id,
-        userName: _todayOrders[orderIndex].userName,
-        orderItems: _todayOrders[orderIndex].orderItems,
-        totalPrice: _todayOrders[orderIndex].totalPrice,
-        status: newStatus,
-        timestamp: _todayOrders[orderIndex].timestamp,
-      );
-    }
-
-    notifyListeners();
   }
 }

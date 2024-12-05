@@ -48,15 +48,14 @@ class _StocksScreenState extends State<StocksScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Stock Management'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAddItemDialog(context),
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddItemDialog(context),
+        child: const Icon(Icons.add),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator()) // Loading indicator
+          ? const Center(
+              child: CircularProgressIndicator()) // Loading indicator
           : itemsProvider.items.isEmpty
               ? const Center(child: Text('No items available.'))
               : ListView.builder(
@@ -69,6 +68,24 @@ class _StocksScreenState extends State<StocksScreen> {
                         width: 50,
                         height: 50,
                         fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.fastfood,
+                            size: 50,
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const SizedBox(
+                            width: 50,
+                            height: 50,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       title: Text(item.name),
                       subtitle:
@@ -126,7 +143,7 @@ class _StocksScreenState extends State<StocksScreen> {
                 id: '',
                 name: nameController.text,
                 description: descriptionController.text,
-                price: int.parse(priceController.text),
+                price: int.parse(priceController.text).toDouble(),
                 stock: int.parse(stockController.text),
                 image: imageController.text,
               );
@@ -175,7 +192,7 @@ class _StocksScreenState extends State<StocksScreen> {
                 id: item.id,
                 name: nameController.text,
                 description: descriptionController.text,
-                price: int.parse(priceController.text),
+                price: int.parse(priceController.text).toDouble(),
                 stock: int.parse(stockController.text),
                 image: imageController.text,
               );

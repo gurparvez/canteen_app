@@ -1,4 +1,3 @@
-import 'package:canteen_app/screens/menu/menu_screen.dart';
 import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
@@ -37,9 +36,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
 
         if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => MenuScreen()),
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            "/menu",
+            (route) => false,
           );
         }
       }
