@@ -1,7 +1,6 @@
 import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {

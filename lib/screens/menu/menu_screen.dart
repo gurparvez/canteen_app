@@ -3,9 +3,11 @@ import 'package:canteen_app/providers/cart_provider.dart';
 import 'package:canteen_app/screens/menu/cart_screen.dart';
 import 'package:canteen_app/screens/menu/user_orders.dart';
 import 'package:canteen_app/screens/profile/profile_page.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:canteen_app/utils/supabase_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MenuScreen extends StatefulWidget {
   @override
@@ -16,26 +18,60 @@ class _MenuScreenState extends State<MenuScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    _updateFcmToken();
   }
 
-  Future<void> _checkAuth() async {
+  Future<void> _updateFcmToken() async {
     final user = supabase.auth.currentUser;
     if (user == null) {
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
-          '/',
+          '/welcome',
           (route) => false,
         );
       }
     }
+    supabase.auth.onAuthStateChange.listen((event) async {
+      if (event.event == AuthChangeEvent.signedIn) {
+        await FirebaseMessaging.instance.requestPermission();
+
+        await FirebaseMessaging.instance.getAPNSToken();
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+
+        if (fcmToken != null) {
+          await _setFcmToken(fcmToken);
+        }
+      }
+    });
+    FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
+      await _setFcmToken(fcmToken);
+    });
+
+    FirebaseMessaging.onMessage.listen((payload) {
+      final notification = payload.notification;
+      if (notification != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${notification.title} ${notification.body}"),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> _setFcmToken(String fcmToken) async {
+    try {
+      await supabase
+        .from('users')
+        .update({'fcm_token': fcmToken})
+        .eq('id', supabase.auth.currentUser!.id);
+    } catch (e) {
+      debugPrint('Error updating FCM token: $e');
+    }
   }
 
   Stream<List<Map<String, dynamic>>> getMenuItems() {
-    return supabase
-        .from('menu_items')
-        .stream(primaryKey: ['id'])
-        .order('name');
+    return supabase.from('menu_items').stream(primaryKey: ['id']).order('name');
   }
 
   Map<String, bool> _loadingStates = {};

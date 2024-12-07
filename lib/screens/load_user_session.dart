@@ -28,8 +28,6 @@ class _LoadUserSessionState extends State<LoadUserSession> {
       iOptions: const IOSOptions(),
     );
 
-    debugPrint(storedToken);
-
     if (storedToken == null) {
       // If no token is stored, redirect to the welcome page
       if (mounted) {

@@ -12,6 +12,7 @@ migrate_working_dir/
 
 # environments
 .env
+supabase/functions/service-account.json
 
 # IntelliJ related
 *.iml

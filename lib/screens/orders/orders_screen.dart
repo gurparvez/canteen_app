@@ -5,6 +5,8 @@ import 'package:canteen_app/screens/orders/all_orders.dart';
 import 'package:canteen_app/screens/orders/stocks_screen.dart';
 import 'package:canteen_app/screens/users/user_management.dart';
 import 'package:canteen_app/utils/supabase_client.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -19,11 +21,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    _updateFcmToken();
     _fetchOrders();
   }
 
-  Future<void> _checkAuth() async {
+  Future<void> _updateFcmToken() async {
     final user = supabase.auth.currentUser;
     if (user == null) {
       if (mounted) {
@@ -59,6 +61,44 @@ class _OrdersScreenState extends State<OrdersScreen> {
           (route) => false,
         );
       }
+    }
+
+    supabase.auth.onAuthStateChange.listen((event) async {
+      if (event.event == AuthChangeEvent.signedIn) {
+        await FirebaseMessaging.instance.requestPermission();
+
+        await FirebaseMessaging.instance.getAPNSToken();
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+
+        if (fcmToken != null) {
+          await _setFcmToken(fcmToken);
+        }
+      }
+    });
+    FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
+      await _setFcmToken(fcmToken);
+    });
+
+    FirebaseMessaging.onMessage.listen((payload) {
+      final notification = payload.notification;
+      if (notification != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${notification.title} ${notification.body}"),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> _setFcmToken(String fcmToken) async {
+    try {
+      await supabase
+        .from('users')
+        .update({'fcm_token': fcmToken})
+        .eq('id', supabase.auth.currentUser!.id);
+    } catch (e) {
+      debugPrint('Error updating FCM token: $e');
     }
   }
 
