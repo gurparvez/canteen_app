@@ -1,153 +1,174 @@
 import 'package:canteen_app/models/cart_item.dart';
+import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class CartProvider with ChangeNotifier {
   List<CartItem> _items = [];
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
 
   List<CartItem> get items => _items;
 
   double get totalPrice =>
       _items.fold(0.0, (sum, item) => sum + (item.price * item.quantity));
 
-  Future<void> fetchCartFromFirestore() async {
-    final user = _auth.currentUser;
+  Future<void> fetchCartFromSupabase() async {
+    final user = supabase.auth.currentUser;
     if (user == null) return;
 
     try {
-      final cartSnapshot = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('cart')
-          .get();
+      final cartItems = await supabase
+          .from('cart_items')
+          .select('*, menu_items(*)')
+          .eq('user_id', user.id);
 
-      _items = cartSnapshot.docs
-          .map((doc) => CartItem.fromMap(doc.data()))
-          .toList();
+      _items = cartItems.map((item) => CartItem(
+            id: item['menu_items']['id'],
+            name: item['menu_items']['name'],
+            price: (item['menu_items']['price'] as num).toDouble(),
+            quantity: item['quantity'],
+          )).toList();
+
       notifyListeners();
     } catch (e) {
-      print("Error fetching cart items: $e");
+      debugPrint("Error fetching cart items: $e");
+      rethrow;
     }
   }
 
   Future<void> addToCart(CartItem item) async {
-    final user = _auth.currentUser;
+    final user = supabase.auth.currentUser;
     if (user == null) return;
 
-    final menuItemDocRef = _firestore.collection('menuItems').doc(item.id);
-    final cartDocRef = _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('cart')
-        .doc(item.id);
+    try {
+      // Check menu item stock
+      final menuItem = await supabase
+          .from('menu_items')
+          .select()
+          .eq('id', item.id)
+          .single();
 
-    // Fetch the menu item to check stock
-    final menuItemDoc = await menuItemDocRef.get();
-    if (!menuItemDoc.exists) {
-      throw Exception('Menu item not found');
-    }
-
-    final menuItemData = menuItemDoc.data();
-    final currentStock = menuItemData?['stock'] ?? 0;
-
-    if (currentStock < item.quantity) {
-      throw Exception('Not enough stock available');
-    }
-
-    // Check if the item already exists in the cart
-    final existingDoc = await cartDocRef.get();
-
-    if (!existingDoc.exists) {
-      // If the item does not exist, add it to the cart
-      await cartDocRef.set(item.toMap());
-
-      _items.add(item);
-    } else {
-      // If the item exists, increment the quantity
-      final currentQuantity = existingDoc.data()?['quantity'] ?? 0;
-      final newQuantity = currentQuantity + item.quantity;
-
-      if (currentStock < newQuantity) {
-        throw Exception('Not enough stock available for the updated quantity');
+      final currentStock = menuItem['stock'] as int;
+      if (currentStock < item.quantity) {
+        throw Exception('Not enough stock available');
       }
 
-      await cartDocRef.update({'quantity': newQuantity});
+      // Check if item already exists in cart
+      final existingCartItem = await supabase
+          .from('cart_items')
+          .select()
+          .eq('user_id', user.id)
+          .eq('menu_item_id', item.id)
+          .maybeSingle();
 
-      // Update local cart list
-      final existingItemIndex = _items.indexWhere((i) => i.id == item.id);
-      if (existingItemIndex != -1) {
-        _items[existingItemIndex] = CartItem(
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: newQuantity,
-        );
+      if (existingCartItem == null) {
+        // Add new item to cart
+        await supabase.from('cart_items').insert({
+          'user_id': user.id,
+          'menu_item_id': item.id,
+          'quantity': item.quantity,
+        });
+
+        _items.add(item);
+      } else {
+        // Update existing item quantity
+        final newQuantity = (existingCartItem['quantity'] as int) + item.quantity;
+
+        if (currentStock < newQuantity) {
+          throw Exception('Not enough stock available for the updated quantity');
+        }
+
+        await supabase
+            .from('cart_items')
+            .update({'quantity': newQuantity})
+            .eq('user_id', user.id)
+            .eq('menu_item_id', item.id);
+
+        final existingItemIndex = _items.indexWhere((i) => i.id == item.id);
+        if (existingItemIndex != -1) {
+          _items[existingItemIndex] = CartItem(
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: newQuantity,
+          );
+        }
       }
+
+      // Update stock
+      await supabase
+          .from('menu_items')
+          .update({'stock': currentStock - item.quantity})
+          .eq('id', item.id);
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error adding to cart: $e");
+      rethrow;
     }
-
-    // Reduce the stock in the menuItems collection
-    final updatedStock = currentStock - item.quantity;
-    await menuItemDocRef.update({'stock': updatedStock});
-
-    notifyListeners();
   }
 
   Future<void> removeFromCart(String itemId) async {
-    _items.removeWhere((item) => item.id == itemId);
-    notifyListeners();
-
-    final user = _auth.currentUser;
+    final user = supabase.auth.currentUser;
     if (user == null) return;
 
-    await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('cart')
-        .doc(itemId)
-        .delete();
+    try {
+      await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('menu_item_id', itemId);
+
+      _items.removeWhere((item) => item.id == itemId);
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error removing from cart: $e");
+      rethrow;
+    }
   }
 
   Future<void> clearCart() async {
-    _items.clear();
-    notifyListeners();
-
-    final user = _auth.currentUser;
+    final user = supabase.auth.currentUser;
     if (user == null) return;
 
-    final cartCollection = _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('cart');
+    try {
+      await supabase
+          .from('cart_items')
+          .delete()
+          .eq('user_id', user.id);
 
-    final cartSnapshot = await cartCollection.get();
-    for (var doc in cartSnapshot.docs) {
-      await doc.reference.delete();
+      _items.clear();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error clearing cart: $e");
+      rethrow;
     }
   }
 
   Future<void> placeOrder() async {
-    final user = _auth.currentUser;
+    final user = supabase.auth.currentUser;
     if (user == null) return;
 
-    final userDoc = await _firestore.collection('users').doc(user.uid).get();
-    final userName = userDoc.data()?['name'] ?? "Unknown";
+    try {
+      // Get user data
+      final userData = await supabase
+          .from('users')
+          .select()
+          .eq('id', user.id)
+          .single();
 
-    final orderData = {
-      'userId': user.uid,
-      'userName': userName,
-      'orderItems': _items.map((item) => item.toMap()).toList(),
-      'totalPrice': totalPrice,
-      'timestamp': FieldValue.serverTimestamp(),
-      'status': 'Pending', // Initial status of the order
-    };
+      // Create order
+      await supabase.from('orders').insert({
+        'user_id': user.id,
+        'user_name': userData['name'] ?? 'Unknown',
+        'order_items': _items.map((item) => item.toMap()).toList(),
+        'total_price': totalPrice,
+        'status': 'pending',
+      });
 
-    // Add the order to the orders collection
-    await _firestore.collection('orders').add(orderData);
-
-    // Clear the cart after placing the order
-    await clearCart();
+      // Clear cart after successful order
+      await clearCart();
+    } catch (e) {
+      debugPrint("Error placing order: $e");
+      rethrow;
+    }
   }
 }

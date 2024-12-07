@@ -1,3 +1,8 @@
+import 'package:canteen_app/screens/load_user_session.dart';
+import 'package:canteen_app/screens/login/login_staff_screen.dart';
+import 'package:canteen_app/screens/menu/menu_screen.dart';
+import 'package:canteen_app/screens/orders/orders_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:canteen_app/firebase_options.dart';
 import 'package:canteen_app/providers/items_provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
@@ -10,6 +15,10 @@ import 'package:provider/provider.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/login/register_screen.dart';
 import 'providers/cart_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+// TODO: migrate the entire app to supabase.
+// push notifications require to upgrade the firebase project
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +26,13 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // await FirebaseNotifications().initNotifications();
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+
+  await Supabase.initialize(
+    url: dotenv.env["SUPABASE_URL"] ?? "",
+    anonKey: dotenv.env["SUPABASE_ANON_KEY"] ?? "",
+  );
 
   runApp(
     MultiProvider(
@@ -42,10 +57,15 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const WelcomeScreen(),
+      initialRoute: '/',
       routes: {
+        '/': (context) => const LoadUserSession(),
+        '/welcome': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),
+        '/login-staff': (context) => const LoginStaffScreen(),
         '/register': (context) => const RegisterScreen(),
+        "/menu": (context) => MenuScreen(),
+        "/orders": (context) => const OrdersScreen(),
       },
     );
   }

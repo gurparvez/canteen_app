@@ -4,6 +4,9 @@ import 'package:canteen_app/providers/orders_provider.dart';
 import 'package:canteen_app/screens/orders/all_orders.dart';
 import 'package:canteen_app/screens/orders/stocks_screen.dart';
 import 'package:canteen_app/screens/users/user_management.dart';
+import 'package:canteen_app/utils/supabase_client.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -18,7 +21,85 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
+    _updateFcmToken();
     _fetchOrders();
+  }
+
+  Future<void> _updateFcmToken() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        );
+        return;
+      }
+    }
+
+    // Check if user is staff
+    try {
+      final userData = await supabase
+          .from('users')
+          .select()
+          .eq('id', user!.id)
+          .single();
+
+      if (userData['role'] != 'staff') {
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/',
+            (route) => false,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error checking user role: $e');
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        );
+      }
+    }
+
+    supabase.auth.onAuthStateChange.listen((event) async {
+      if (event.event == AuthChangeEvent.signedIn) {
+        await FirebaseMessaging.instance.requestPermission();
+
+        await FirebaseMessaging.instance.getAPNSToken();
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+
+        if (fcmToken != null) {
+          await _setFcmToken(fcmToken);
+        }
+      }
+    });
+    FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) async {
+      await _setFcmToken(fcmToken);
+    });
+
+    FirebaseMessaging.onMessage.listen((payload) {
+      final notification = payload.notification;
+      if (notification != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${notification.title} ${notification.body}"),
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> _setFcmToken(String fcmToken) async {
+    try {
+      await supabase
+        .from('users')
+        .update({'fcm_token': fcmToken})
+        .eq('id', supabase.auth.currentUser!.id);
+    } catch (e) {
+      debugPrint('Error updating FCM token: $e');
+    }
   }
 
   Future<void> _fetchOrders() async {
@@ -34,6 +115,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
       debugPrint("Fetch orders error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to fetch orders. Please try again.")),
+      );
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    await supabase.auth.signOut();
+    if (mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/',
+        (route) => false,
       );
     }
   }
@@ -73,6 +164,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
               );
             },
             icon: const Icon(Icons.supervisor_account_outlined),
+          ),
+          IconButton(
+            onPressed: _handleLogout,
+            icon: const Icon(Icons.logout),
           ),
         ],
       ),

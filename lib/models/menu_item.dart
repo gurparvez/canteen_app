@@ -2,7 +2,7 @@ class MenuItem {
   final String id;
   final String name;
   final String description;
-  final int price;
+  final double price;
   final int stock;
   final String image;
 
