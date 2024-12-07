@@ -1,5 +1,7 @@
 import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,6 +28,14 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (response.user != null) {
+        const storage = FlutterSecureStorage();
+        await storage.write(
+          key: 'refresh_token',
+          value: supabase.auth.currentSession!.refreshToken,
+          webOptions: const WebOptions(),
+          aOptions: AndroidOptions(),
+          iOptions: IOSOptions(),
+        );
         if (mounted) {
           Navigator.of(context).pushNamedAndRemoveUntil(
             "/menu",
@@ -134,7 +144,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     height: 24,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
                                     ),
                                   )
                                 : const Text(
@@ -145,14 +156,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextButton(
-                          onPressed: _isLoading ? null : () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RegisterScreen(),
-                              ),
-                            );
-                          },
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const RegisterScreen(),
+                                    ),
+                                  );
+                                },
                           child: const Text(
                             "Don't have an account? Register",
                             style: TextStyle(fontSize: 14),

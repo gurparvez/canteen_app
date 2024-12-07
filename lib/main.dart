@@ -1,3 +1,4 @@
+import 'package:canteen_app/screens/load_user_session.dart';
 import 'package:canteen_app/screens/login/login_staff_screen.dart';
 import 'package:canteen_app/screens/menu/menu_screen.dart';
 import 'package:canteen_app/screens/orders/orders_screen.dart';
@@ -58,7 +59,8 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const WelcomeScreen(),
+        '/': (context) => const LoadUserSession(),
+        '/welcome': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),
         '/login-staff': (context) => const LoginStaffScreen(),
         '/register': (context) => const RegisterScreen(),
