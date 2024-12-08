@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:canteen_app/providers/orders_provider.dart';
 import 'package:canteen_app/screens/orders/all_orders.dart';
@@ -39,11 +40,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
     // Check if user is staff
     try {
-      final userData = await supabase
-          .from('users')
-          .select()
-          .eq('id', user!.id)
-          .single();
+      final userData =
+          await supabase.from('users').select().eq('id', user!.id).single();
 
       if (userData['role'] != 'staff') {
         if (mounted) {
@@ -93,10 +91,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Future<void> _setFcmToken(String fcmToken) async {
     try {
-      await supabase
-        .from('users')
-        .update({'fcm_token': fcmToken})
-        .eq('id', supabase.auth.currentUser!.id);
+      await supabase.from('users').update({'fcm_token': fcmToken}).eq(
+          'id', supabase.auth.currentUser!.id);
     } catch (e) {
       debugPrint('Error updating FCM token: $e');
     }
@@ -114,18 +110,31 @@ class _OrdersScreenState extends State<OrdersScreen> {
     } catch (e) {
       debugPrint("Fetch orders error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to fetch orders. Please try again.")),
+        const SnackBar(
+            content: Text("Failed to fetch orders. Please try again.")),
       );
     }
   }
 
   Future<void> _handleLogout() async {
-    await supabase.auth.signOut();
-    if (mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        '/',
-        (route) => false,
-      );
+    const storage = FlutterSecureStorage();
+    try {
+      await supabase.auth.signOut();
+      await storage.delete(key: 'refresh_token');
+
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to logout. Please try again.")),
+        );
+      }
     }
   }
 
@@ -160,7 +169,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const UserManagementScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const UserManagementScreen()),
               );
             },
             icon: const Icon(Icons.supervisor_account_outlined),
@@ -174,90 +184,80 @@ class _OrdersScreenState extends State<OrdersScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : orders.isEmpty
-          ? const Center(child: Text("No orders available"))
-          : ListView.builder(
-        itemCount: orders.length,
-        itemBuilder: (context, index) {
-          final order = orders[index];
-          final isCompleted = order.status == 'Completed';
-          final isCancelled = order.status == 'Cancelled';
+              ? const Center(child: Text("No orders available"))
+              : ListView.builder(
+                  itemCount: orders.length,
+                  itemBuilder: (context, index) {
+                    final order = orders[index];
+                    final isCompleted = order.status == 'completed';
+                    final isCancelled = order.status == 'cancelled';
 
-          return Opacity(
-            opacity:
-            isCompleted || isCancelled ? 0.5 : 1.0, // Fade effect
-            child: Card(
-              margin: const EdgeInsets.all(8.0),
-              child: ListTile(
-                title: Text(
-                  "Order by ${order.userName}",
-                  style: TextStyle(
-                    color: isCompleted || isCancelled
-                        ? Colors.grey
-                        : Colors.black,
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ...order.orderItems.map((item) {
-                      return Text(
-                        "${item['name']} x ${item['quantity']} - ₹${item['price'] * item['quantity']}",
-                        style: TextStyle(
-                          color: isCompleted || isCancelled
-                              ? Colors.grey
-                              : Colors.black,
+                    return Opacity(
+                      opacity:
+                          isCompleted || isCancelled ? 0.5 : 1.0, // Fade effect
+                      child: Card(
+                        margin: const EdgeInsets.all(8.0),
+                        child: ListTile(
+                          title: Text(
+                            "Order by ${order.userName}",
+                            style: const TextStyle(
+                              color: Colors
+                                  .black,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...order.orderItems.map((item) {
+                                return Text(
+                                  "${item['name']} x ${item['quantity']} - ₹${item['price'] * item['quantity']}",
+                                );
+                              }).toList(),
+                              const SizedBox(height: 8.0),
+                              Text(
+                                "Total: ₹${order.totalPrice}",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                "Status: ${order.status}",
+                                style: TextStyle(
+                                  color: isCompleted
+                                      ? Colors.green
+                                      : isCancelled
+                                          ? Colors.red
+                                          : Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (newStatus) {
+                              ordersProvider.updateOrderStatus(
+                                order.id,
+                                newStatus,
+                              );
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'Pending',
+                                child: Text("Mark as Pending"),
+                              ),
+                              const PopupMenuItem(
+                                value: 'Completed',
+                                child: Text("Mark as Completed"),
+                              ),
+                              const PopupMenuItem(
+                                value: 'Cancelled',
+                                child: Text("Mark as Cancelled"),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    }).toList(),
-                    const SizedBox(height: 8.0),
-                    Text(
-                      "Total: ₹${order.totalPrice}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isCompleted || isCancelled
-                            ? Colors.grey
-                            : Colors.black,
                       ),
-                    ),
-                    Text(
-                      "Status: ${order.status}",
-                      style: TextStyle(
-                        color: isCompleted
-                            ? Colors.green
-                            : isCancelled
-                            ? Colors.red
-                            : Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-                trailing: PopupMenuButton<String>(
-                  onSelected: (newStatus) {
-                    ordersProvider.updateOrderStatus(
-                      order.id,
-                      newStatus,
                     );
                   },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'Pending',
-                      child: Text("Mark as Pending"),
-                    ),
-                    const PopupMenuItem(
-                      value: 'Completed',
-                      child: Text("Mark as Completed"),
-                    ),
-                    const PopupMenuItem(
-                      value: 'Cancelled',
-                      child: Text("Mark as Cancelled"),
-                    ),
-                  ],
                 ),
-              ),
-            ),
-          );
-        },
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _fetchOrders,
         tooltip: 'Refresh Orders',

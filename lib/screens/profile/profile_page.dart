@@ -1,6 +1,7 @@
 import 'package:canteen_app/screens/profile/change_password_form.dart';
 import 'package:canteen_app/utils/supabase_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -124,8 +125,12 @@ class _ProfilePageState extends State<ProfilePage> {
       _isLoading = true;
     });
 
+    const storage = FlutterSecureStorage();
+
     try {
       await supabase.auth.signOut();
+      await storage.delete(key: 'refresh_token');
+      
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
           '/',
