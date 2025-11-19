@@ -17,7 +17,6 @@ import 'screens/login/register_screen.dart';
 import 'providers/cart_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// TODO: migrate the entire app to supabase.
 // push notifications require to upgrade the firebase project
 
 void main() async {
